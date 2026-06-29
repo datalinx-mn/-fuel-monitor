@@ -224,6 +224,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 .myhist-item{padding:8px 0;border-bottom:1px solid var(--bd);font-size:13px}
 .myhist-item:last-child{border-bottom:none}
+
+/* Registration steps */
+.reg-steps{display:flex;align-items:center;justify-content:center;margin-bottom:24px;gap:0}
+.reg-step{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.4);transition:all .3s;flex-shrink:0}
+.reg-step.active{background:#fff;color:var(--g);border-color:#fff}
+.reg-step.done{background:var(--gl);color:#fff;border-color:var(--gl)}
+.reg-line{height:2px;width:40px;background:rgba(255,255,255,.3)}
+.reg-line.done{background:var(--gl)}
 </style>
 </head>
 <body>
@@ -256,6 +264,103 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <input type="password" id="loginPass" placeholder="Нууц үг..." autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn btn-p" id="loginBtn" onclick="doLogin()">Нэвтрэх</button>
+      <div style="text-align:center;margin-top:16px">
+        <span style="font-size:13px;color:rgba(255,255,255,.7)">Компани бүртгэлгүй юу?</span>
+        <button onclick="showRegister()" style="background:none;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;margin-left:6px">Үнэгүй туршиж үзэх →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER SCREEN -->
+<div id="registerScreen" style="display:none">
+  <div class="login-screen">
+    <div class="login-box" style="max-width:420px">
+      <div class="login-logo">
+        <div class="login-icon">🏢</div>
+        <div class="login-title" style="font-size:18px">Компани бүртгэх</div>
+        <div class="login-sub">14 хоног үнэгүй туршина</div>
+      </div>
+
+      <div class="reg-steps">
+        <div class="reg-step active" id="regStep1Dot">1</div>
+        <div class="reg-line"></div>
+        <div class="reg-step" id="regStep2Dot">2</div>
+        <div class="reg-line"></div>
+        <div class="reg-step" id="regStep3Dot">3</div>
+      </div>
+
+      <!-- STEP 1: Company info -->
+      <div id="regStep1">
+        <div style="font-size:14px;font-weight:700;color:var(--g);margin-bottom:14px">1. Компанийн мэдээлэл</div>
+        <div class="field">
+          <label>Компанийн нэр *</label>
+          <input type="text" id="regCompany" placeholder="Жишээ: Тэргэн ХХК">
+        </div>
+        <div class="field">
+          <label>Холбогдох утас *</label>
+          <input type="tel" id="regPhone" placeholder="99001122" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Имэйл (заавал биш)</label>
+          <input type="email" id="regEmail" placeholder="info@company.mn">
+        </div>
+        <button class="btn btn-p" onclick="regNext1()">Үргэлжлүүлэх →</button>
+      </div>
+
+      <!-- STEP 2: Admin account -->
+      <div id="regStep2" style="display:none">
+        <div style="font-size:14px;font-weight:700;color:var(--g);margin-bottom:14px">2. Менежерийн бүртгэл</div>
+        <div class="field">
+          <label>Менежерийн нэр *</label>
+          <input type="text" id="regAdminName" placeholder="Та өөрийн нэрээ оруулна">
+        </div>
+        <div class="field">
+          <label>Нэвтрэх нэр *</label>
+          <input type="text" id="regAdminUser" placeholder="Жишээ: tergen_admin" autocapitalize="none">
+        </div>
+        <div class="field">
+          <label>Нууц үг *</label>
+          <input type="password" id="regAdminPass" placeholder="Дор хаяж 6 тэмдэгт">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn" style="background:var(--lt);color:var(--dk)" onclick="regBack1()">← Буцах</button>
+          <button class="btn btn-p" onclick="regNext2()">Үргэлжлүүлэх →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Vehicles -->
+      <div id="regStep3" style="display:none">
+        <div style="font-size:14px;font-weight:700;color:var(--g);margin-bottom:14px">3. Машины дугаарууд</div>
+        <p style="font-size:12px;color:var(--mid);margin-bottom:12px;line-height:1.6">Машины дугааруудаа оруулна уу. Дараа нь нэмж болно.</p>
+        <div id="regVehicleList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+        <div class="add-row" style="margin-bottom:14px">
+          <input type="text" id="regVehicleInput" placeholder="Жишээ: УБА-001" style="padding:11px 13px;border:1.5px solid var(--bd);border-radius:10px;font-size:15px;flex:1" onkeydown="if(event.key==='Enter')addRegVehicle()">
+          <button onclick="addRegVehicle()" style="background:var(--g);color:#fff;border:none;border-radius:10px;padding:0 18px;font-size:20px;cursor:pointer;font-weight:700">+</button>
+        </div>
+        <div class="login-err" id="regErr" style="display:none;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" style="background:var(--lt);color:var(--dk)" onclick="regBack2()">← Буцах</button>
+          <button class="btn btn-p" id="regSubmitBtn" onclick="submitRegistration()">✅ Бүртгүүлэх</button>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div id="regSuccess" style="display:none;text-align:center;padding:10px 0">
+        <div style="font-size:48px;margin-bottom:12px">🎉</div>
+        <div style="font-size:17px;font-weight:800;color:var(--g);margin-bottom:8px">Бүртгэл амжилттай!</div>
+        <div style="font-size:13px;color:var(--mid);line-height:1.7;margin-bottom:16px">
+          Таны хүсэлт DataLinx-д илгээгдлээ.<br>
+          Бид <strong>24 цагийн дотор</strong> холбогдож,<br>
+          системийг идэвхжүүлнэ.<br><br>
+          📞 <strong>94009479</strong>
+        </div>
+        <button class="btn btn-p" onclick="showLogin()">← Нэвтрэх хуудас руу</button>
+      </div>
+
+      <div style="text-align:center;margin-top:14px" id="regBackLink">
+        <button onclick="showLogin()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:12px;cursor:pointer">← Нэвтрэх хуудас руу буцах</button>
+      </div>
     </div>
   </div>
 </div>
@@ -458,6 +563,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div class="card">
+      <div class="ctitle">Машины удирдлага</div>
+      <div class="tag-list" id="vTags" style="margin-bottom:12px"></div>
+      <div class="add-row">
+        <input type="text" id="newVehicleInput" placeholder="Машины дугаар — жишээ: УБА-005" onkeydown="if(event.key==='Enter')addVehicleLocal()">
+        <button onclick="addVehicleLocal()" style="background:var(--g);color:#fff;border:none;border-radius:10px;padding:0 18px;font-size:20px;cursor:pointer;font-weight:700">+</button>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="ctitle">Норм тохиргоо (км/литр)</div>
       <p style="font-size:12px;color:var(--mid);margin-bottom:14px;line-height:1.6">Машин бүрийн хэвийн зарцуулалтын норм. Доогуур бол улаан дохиолол гарна.</p>
       <div id="normList"></div>
@@ -581,6 +695,144 @@ async function doLogin(){
     errEl.style.display='block';
   }
   btn.disabled=false;btn.textContent='Нэвтрэх';
+}
+
+// ============================================================
+// REGISTRATION
+// ============================================================
+let regVehicles = [];
+
+function showRegister(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('registerScreen').style.display='block';
+  regVehicles=[];
+  renderRegVehicles();
+  setRegStep(1);
+}
+
+function showLogin(){
+  document.getElementById('registerScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='block';
+  // Reset reg form
+  ['regCompany','regPhone','regEmail','regAdminName','regAdminUser','regAdminPass','regVehicleInput'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  regVehicles=[];
+  setRegStep(1);
+  document.getElementById('regSuccess').style.display='none';
+  document.getElementById('regBackLink').style.display='block';
+  ['regStep1','regStep2','regStep3'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('regStep1').style.display='block';
+}
+
+function setRegStep(n){
+  [1,2,3].forEach(i=>{
+    const dot=document.getElementById('regStep'+i+'Dot');
+    if(i<n) dot.className='reg-step done';
+    else if(i===n) dot.className='reg-step active';
+    else dot.className='reg-step';
+  });
+  // Update lines
+  const lines=document.querySelectorAll('.reg-line');
+  lines.forEach((l,i)=>{ l.className='reg-line'+(n>i+1?' done':''); });
+}
+
+function regNext1(){
+  const company=document.getElementById('regCompany').value.trim();
+  const phone=document.getElementById('regPhone').value.trim();
+  if(!company||!phone){showNotif('Компанийн нэр болон утасны дугаарыг оруулна уу','err');return;}
+  document.getElementById('regStep1').style.display='none';
+  document.getElementById('regStep2').style.display='block';
+  setRegStep(2);
+}
+function regBack1(){
+  document.getElementById('regStep2').style.display='none';
+  document.getElementById('regStep1').style.display='block';
+  setRegStep(1);
+}
+function regNext2(){
+  const name=document.getElementById('regAdminName').value.trim();
+  const user=document.getElementById('regAdminUser').value.trim();
+  const pass=document.getElementById('regAdminPass').value;
+  if(!name||!user||!pass){showNotif('Бүх талбарыг бөглөнө үү','err');return;}
+  if(pass.length<6){showNotif('Нууц үг дор хаяж 6 тэмдэгт байх ёстой','err');return;}
+  if(!/^[a-zA-Z0-9_]+$/.test(user)){showNotif('Нэвтрэх нэрт зөвхөн латин үсэг, тоо, _ ашиглана','err');return;}
+  document.getElementById('regStep2').style.display='none';
+  document.getElementById('regStep3').style.display='block';
+  setRegStep(3);
+}
+function regBack2(){
+  document.getElementById('regStep3').style.display='none';
+  document.getElementById('regStep2').style.display='block';
+  setRegStep(2);
+}
+
+function addRegVehicle(){
+  const inp=document.getElementById('regVehicleInput');
+  const v=inp.value.trim().toUpperCase();
+  if(!v)return;
+  if(regVehicles.includes(v)){showNotif('Аль хэдийн байна','err');return;}
+  regVehicles.push(v);
+  inp.value='';
+  renderRegVehicles();
+}
+function removeRegVehicle(v){
+  regVehicles=regVehicles.filter(x=>x!==v);
+  renderRegVehicles();
+}
+function renderRegVehicles(){
+  const el=document.getElementById('regVehicleList');
+  if(!regVehicles.length){
+    el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.6)">Машин нэмээгүй байна — дараа нэмж болно</div>';
+    return;
+  }
+  el.innerHTML=regVehicles.map(v=>`
+    <div style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:5px 12px;border-radius:20px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">
+      ${v} <span onclick="removeRegVehicle('${v}')" style="cursor:pointer;font-size:16px;opacity:.8">×</span>
+    </div>`).join('');
+}
+
+async function submitRegistration(){
+  const company  = document.getElementById('regCompany').value.trim();
+  const phone    = document.getElementById('regPhone').value.trim();
+  const email    = document.getElementById('regEmail').value.trim();
+  const fullName = document.getElementById('regAdminName').value.trim();
+  const username = document.getElementById('regAdminUser').value.trim().toLowerCase();
+  const password = document.getElementById('regAdminPass').value;
+
+  const btn=document.getElementById('regSubmitBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spin-sm"></span> Илгээж байна...';
+  document.getElementById('regErr').style.display='none';
+
+  try{
+    const res=await fetch(CENTRAL_SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({
+        action:'registerCompany',
+        company, phone, email,
+        adminName: fullName,
+        adminUsername: username,
+        adminPassword: password,
+        vehicles: regVehicles
+      })
+    });
+    const data=await res.json();
+    if(data.status==='success'){
+      ['regStep1','regStep2','regStep3'].forEach(id=>document.getElementById(id).style.display='none');
+      document.getElementById('regSuccess').style.display='block';
+      document.getElementById('regBackLink').style.display='none';
+    }else{
+      const errEl=document.getElementById('regErr');
+      errEl.textContent=data.message||'Алдаа гарлаа. Дахин оролдоно уу.';
+      errEl.style.display='block';
+    }
+  }catch(e){
+    const errEl=document.getElementById('regErr');
+    errEl.textContent='Холболтын алдаа гарлаа. Дахин оролдоно уу.';
+    errEl.style.display='block';
+  }
+  btn.disabled=false;btn.textContent='✅ Бүртгүүлэх';
 }
 
 function doLogout(){
@@ -993,6 +1245,7 @@ function renderHistory(){
 function renderSetup(){
   renderNormList();
   renderUserList();
+  renderVehicleTags();
   document.getElementById('setupCompany').textContent=CU.company||'—';
   const statusEl=document.getElementById('setupStatus');
   const active=CU.companyStatus==='Active';
@@ -1145,6 +1398,62 @@ async function deleteUser(idx){
     }
   }catch(e){showNotif('Холболтын алдаа гарлаа','err');}
   hideLoading();
+}
+
+// ============================================================
+// VEHICLE MANAGEMENT
+// ============================================================
+function renderVehicleTags(){
+  const vehicles=S.get('vehicles')||[];
+  const el=document.getElementById('vTags');
+  if(!el)return;
+  if(!vehicles.length){
+    el.innerHTML='<div style="font-size:13px;color:var(--mid)">Машин байхгүй байна — доор нэмнэ үү</div>';
+    return;
+  }
+  el.innerHTML=vehicles.map(v=>`
+    <div class="tag">${v}
+      <span class="tag-x" onclick="removeVehicleLocal('${v}')" title="Устгах">×</span>
+    </div>`).join('');
+}
+
+async function addVehicleLocal(){
+  const inp=document.getElementById('newVehicleInput');
+  const name=inp.value.trim().toUpperCase();
+  if(!name){showNotif('Машины дугаар оруулна уу','err');return;}
+  const vehicles=S.get('vehicles')||[];
+  if(vehicles.includes(name)){showNotif('Энэ машин аль хэдийн байна','err');return;}
+  vehicles.push(name);
+  S.set('vehicles',vehicles);
+  inp.value='';
+  renderVehicleTags();
+  renderNormList();
+  showNotif(`${name} нэмэгдлээ ✅`,'ok');
+
+  // Sheet-д хадгална — saveUser-тэй ижил endpoint ашиглана
+  try{
+    await fetch(CENTRAL_SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'saveVehicles',company:CU.company,vehicles})
+    });
+  }catch(e){}
+}
+
+async function removeVehicleLocal(name){
+  if(!confirm(`"${name}" машиныг устгах уу?`))return;
+  const vehicles=(S.get('vehicles')||[]).filter(v=>v!==name);
+  S.set('vehicles',vehicles);
+  renderVehicleTags();
+  renderNormList();
+  showNotif(`${name} устгагдлаа`,'ok');
+  try{
+    await fetch(CENTRAL_SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'saveVehicles',company:CU.company,vehicles})
+    });
+  }catch(e){}
 }
 
 function renderNormList(){
