@@ -900,17 +900,35 @@ function showApp(){
 // CAMERA — environment facing, no gallery option
 function openCam(type){document.getElementById(type==='odometer'?'oInput':'rInput').click();}
 
+let photoProcessing = {odometer:false, receipt:false};
+
 function handlePhoto(type,input){
   if(!input.files[0])return;
   const wrap=document.getElementById(type==='odometer'?'oWrap':'rWrap');
   const img=document.getElementById(type==='odometer'?'oImg':'rImg');
+
+  photoProcessing[type]=true;
+  showNotif('Зураг боловсруулж байна...','ok');
+
   compressImage(input.files[0], 1280, 0.7).then(base64=>{
     photos[type]=base64;
+    photoProcessing[type]=false;
     wrap.style.display='block';img.src=base64;
+    showNotif('Зураг хадгалагдлаа ✅','ok');
   }).catch(()=>{
-    // Compress амжилтгүй бол анхны зургийг хэвээр ашиглана
+    // Compress амжилтгүй бол — анхны файлыг шууд base64 болгоно
+    // (iOS Safari дээр canvas заримдаа CORS/memory шалтгаанаар бүтэлгүйтдэг)
     const reader=new FileReader();
-    reader.onload=e=>{photos[type]=e.target.result;wrap.style.display='block';img.src=e.target.result;};
+    reader.onload=e=>{
+      photos[type]=e.target.result;
+      photoProcessing[type]=false;
+      wrap.style.display='block';img.src=e.target.result;
+      showNotif('Зураг хадгалагдлаа ✅','ok');
+    };
+    reader.onerror=()=>{
+      photoProcessing[type]=false;
+      showNotif('Зураг уншихад алдаа гарлаа — дахин оролдоно уу','err');
+    };
     reader.readAsDataURL(input.files[0]);
   });
 }
@@ -919,28 +937,36 @@ function handlePhoto(type,input){
 // дата хэмжээг 200-400KB орчим хүртэл бууруулна (3-5MB-аас)
 function compressImage(file, maxDim, quality){
   return new Promise((resolve,reject)=>{
+    if(!file || !file.type.startsWith('image/')){reject('not an image');return;}
     const reader=new FileReader();
     reader.onload=e=>{
       const img=new Image();
       img.onload=()=>{
-        let w=img.width, h=img.height;
-        if(w>h && w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
-        else if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
-        const canvas=document.createElement('canvas');
-        canvas.width=w;canvas.height=h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(canvas.toDataURL('image/jpeg',quality));
+        try{
+          let w=img.width, h=img.height;
+          if(!w || !h){reject('invalid dimensions');return;}
+          if(w>h && w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
+          else if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+          const canvas=document.createElement('canvas');
+          canvas.width=w;canvas.height=h;
+          const ctx=canvas.getContext('2d');
+          ctx.drawImage(img,0,0,w,h);
+          const result=canvas.toDataURL('image/jpeg',quality);
+          if(!result || result==='data:,'){reject('empty canvas output');return;}
+          resolve(result);
+        }catch(err){reject(err);}
       };
-      img.onerror=reject;
+      img.onerror=()=>reject('image load failed');
       img.src=e.target.result;
     };
-    reader.onerror=reject;
+    reader.onerror=()=>reject('file read failed');
     reader.readAsDataURL(file);
   });
 }
 
 function retake(type){
   photos[type]=null;
+  photoProcessing[type]=false;
   const wrap=document.getElementById(type==='odometer'?'oWrap':'rWrap');
   const img=document.getElementById(type==='odometer'?'oImg':'rImg');
   const inp=document.getElementById(type==='odometer'?'oInput':'rInput');
@@ -983,7 +1009,16 @@ async function submitEntry(){
   if(!v){showNotif('Машин сонгоно уу','err');return;}
   if(!km||km<=0){showNotif('Одометрийн заалт оруулна уу','err');return;}
   if(!liters||liters<=0){showNotif('Нэмсэн литр оруулна уу','err');return;}
-  if(!photos.odometer){showNotif('Одометрийн зураг заавал авна уу 📷','err');return;}
+  if(photoProcessing.odometer||photoProcessing.receipt){showNotif('Зураг боловсруулж байна — түр хүлээнэ үү...','err');return;}
+  // iOS Safari дээр photos[] хоцроно — img src-ийг fallback болгон ашиглана
+  if(!photos.odometer){
+    const imgSrc=document.getElementById('oImg').src;
+    if(imgSrc&&imgSrc.startsWith('data:')){
+      photos.odometer=imgSrc;
+    } else {
+      showNotif('Одометрийн зураг заавал авна уу 📷','err');return;
+    }
+  }
   const prev=allEntries.filter(e=>e.vehicleNumber===v).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
   let kml=null;
   if(prev.length){const d=km-prev[0].odometerKm;if(d>0)kml=parseFloat((d/liters).toFixed(2));}
